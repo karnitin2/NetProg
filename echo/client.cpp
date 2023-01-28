@@ -47,6 +47,7 @@ int main()
         {
             cout << "\nServer> " << string(buf, bytesReceived) << "\r\n";
         }
- } while(true);
- close(sock);
- return 0;
+    } while(true);
+    close(sock);
+    return 0;
+ }
