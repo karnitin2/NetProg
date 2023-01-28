@@ -1,52 +1,37 @@
 #include <iostream>
+#include <stdlib.h>
 #include <sys/types.h>
-#include <unistd.h>
 #include <sys/socket.h>
-#include <netdb.h>
+#include <netinet/in.h>
+#include <errno.h>
+#include <stdio.h>
 #include <arpa/inet.h>
 #include <string.h>
-#include <string>
+#include <unistd.h>
+#include <signal.h>
 using namespace std;
 int main()
 {
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
-    if (sock == -1)
-    {
-        return 1;
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd == -1) {
+       perror("Socket Creation Has Failed : ");
+       exit(-1);
     }
-    int port = 33333;
-    string ipAddress = "127.0.0.1";
-    sockaddr_in hint;
-    hint.sin_family = AF_INET;
-    hint.sin_port = htons(port);
-    inet_pton(AF_INET, ipAddress.c_str(), &hint.sin_addr);
-    int connectRes = connect(sock, (sockaddr*)&hint, sizeof(hint));
-    if (connectRes == -1)
+    struct sockaddr_in s_addr;
+    s_addr.sin_family = AF_INET;
+    s_addr.sin_port = htons(32214);
+    inet_aton("127.0.0.1", &s_addr.sin_addr);
+    socklen_t s_addr_len = sizeof(s_addr);
+    char buffer[100];
+    cout << "Client:\n";
+    while(1)
     {
-        cout << "Error connection" << endl;
-        return 1;
+       cout << "\nClient: ";
+       fgets(buffer, 100, stdin);
+       sendto(fd, buffer, strlen(buffer),0,(const struct sockaddr*) &s_addr,
+s_addr_len);
+       int n = recvfrom(fd, buffer, 100,0,(struct sockaddr*) &s_addr, &s_addr_len);
+       cout << "Server: " << buffer << endl;
     }
-    char buf[4096];
-    string userInput;
-    do {
-        cout << "\n> ";
-        getline(cin, userInput);
-        int sendRes = send(sock, userInput.c_str(), userInput.size() + 1, 0);
-        if (sendRes == -1)
-        {
-            cout << "Could not send to server! Whoops!\r\n";
-            continue;
-        }
-        memset(buf, 0, 4096);
-        int bytesReceived = recv(sock, buf, 4096, 0);
-        if (bytesReceived == -1)
-        {
-            cout << "There was an error getting response from server\r\n";
-        }
-        else
-        {
-            cout << "\nServer> " << string(buf, bytesReceived) << "\r\n";
-        }
- } while(true);
- close(sock);
- return 0;
+    return 0;
+}
